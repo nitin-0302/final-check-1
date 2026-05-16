@@ -1,0 +1,181 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token != null && "email" in request.auth.token && (
+          request.auth.token.email == "brothernitin99@gmail.com" || 
+          request.auth.token.email == "nitin.c@somaiya.edu"
+        )) ||
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) && 
+         (!get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.keys().contains('role') || 
+          get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin'))
+      );
+    }
+
+    function isCoAdmin() {
+      return isSignedIn() && (
+        (request.auth.token != null && "email" in request.auth.token && (
+          request.auth.token.email == "brothernitin77@gmail.com"
+        )) ||
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'co-admin')
+      );
+    }
+
+    function isAtLeastCoAdmin() {
+      return isAdmin() || isCoAdmin();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'name', 'email', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() >= 5 && data.email.size() <= 100 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20)) &&
+             (!('college' in data) || (data.college is string && data.college.size() <= 100)) &&
+             (!('isAdmin' in data) || data.isAdmin is bool) &&
+             data.createdAt is string;
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['userId', 'userEmail', 'userName', 'eventIds', 'teamDetails', 'phone', 'college', 'totalAmount', 'paymentMethod', 'transactionId', 'paymentStatus', 'confirmationMessage', 'uniqueCode', 'registrationTime']) &&
+             data.userId == request.auth.uid &&
+             data.userEmail is string &&
+             data.userName is string &&
+             data.eventIds is list && data.eventIds.size() > 0 &&
+             data.teamDetails is map &&
+             data.phone is string && data.phone.size() >= 10 &&
+             data.college is string &&
+             data.totalAmount is number &&
+             data.paymentMethod in ['upi', 'cash'] &&
+             data.transactionId is string &&
+             data.paymentStatus == 'pending' &&
+             data.uniqueCode is string && data.uniqueCode.size() >= 5 &&
+             data.registrationTime is string;
+    }
+
+    function isValidRegUpdate(data) {
+      return isAtLeastCoAdmin() || (isSignedIn() && (
+        (!data.keys().contains('paymentStatus') || data.paymentStatus in ['pending', 'approved', 'rejected', 'confirmed']) &&
+        (!data.keys().contains('attended') || data.attended is bool)
+      ));
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['userId', 'userName', 'text', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.text is string && data.text.size() > 0;
+    }
+
+    function isValidBroadcast(data) {
+      return data.keys().hasAll(['message', 'type', 'createdAt']) &&
+             data.message is string && data.message.size() > 0;
+    }
+
+    function isValidQuizResponse(data) {
+      return data.keys().hasAll(['userId', 'score', 'submittedAt']) &&
+             data.userId == request.auth.uid &&
+             data.score is number;
+    }
+
+    function isValidTreasureHuntProgress(data) {
+      return data.keys().hasAll(['userId', 'currentClueIndex']) &&
+             data.userId == request.auth.uid;
+    }
+
+    // --- Match Blocks ---
+
+    // 1. Connection Test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAtLeastCoAdmin();
+      allow list: if isAtLeastCoAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && (
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.email == resource.data.email
+      );
+    }
+
+    match /registrations/{registrationId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAtLeastCoAdmin());
+      allow create: if isSignedIn() && isValidRegistration(request.resource.data);
+      allow update: if isAtLeastCoAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && isValidRegUpdate(request.resource.data));
+      allow delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidMessage(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /announcements/{broadcastId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAtLeastCoAdmin() && isValidBroadcast(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAtLeastCoAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /quiz_responses/{responseId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidQuizResponse(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /treasure_hunts/{huntId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAtLeastCoAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /treasure_hunt_progress/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isValidTreasureHuntProgress(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /support_messages/{messageId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAtLeastCoAdmin());
+      allow create: if isSignedIn() && (
+        (request.resource.data.userId == request.auth.uid && request.resource.data.sender == 'user') || 
+        isAtLeastCoAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

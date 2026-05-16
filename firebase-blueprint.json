@@ -1,0 +1,196 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a registered user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "college": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "email"]
+    },
+    "Registration": {
+      "title": "Event Registration",
+      "description": "User participation record for events",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "eventIds": { "type": "array", "items": { "type": "string" } },
+        "teamDetails": { "type": "object" },
+        "phone": { "type": "string" },
+        "college": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["upi", "cash"] },
+        "transactionId": { "type": "string" },
+        "paymentStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "confirmationMessage": { "type": "string" },
+        "uniqueCode": { "type": "string", "description": "5-digit unique participant ID" },
+        "registrationTime": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userEmail", "userName", "eventIds", "teamDetails", "phone", "college", "totalAmount", "paymentMethod", "transactionId", "paymentStatus", "confirmationMessage", "uniqueCode", "registrationTime"]
+    },
+    "ChatMessage": {
+      "title": "Community Message",
+      "description": "Message in the global community chat",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "text", "timestamp"]
+    },
+    "Announcement": {
+      "title": "Fest Announcement",
+      "description": "Official announcement from fest admins",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "author": { "type": "string" }
+      },
+      "required": ["title", "content", "timestamp"]
+    },
+    "QuizConfig": {
+      "title": "Quiz Configuration",
+      "description": "Admin controlled quiz state and questions",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "currentQuestionIndex": { "type": "number" },
+        "timeLimit": { "type": "number" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctAnswer": { "type": "number" },
+              "isDoublePoints": { "type": "boolean" },
+              "timeLimit": { "type": "number" }
+            }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "QuizResponse": {
+      "title": "Quiz Response",
+      "description": "Participant's quiz answers and results",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "quizName": { "type": "string" },
+        "quizId": { "type": "string" },
+        "answers": { "type": "array", "items": { "type": "number" } },
+        "score": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "currentStreak": { "type": "number" },
+        "highestStreak": { "type": "number" },
+        "averageResponseTime": { "type": "number" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "score", "submittedAt"]
+    },
+    "TreasureHuntConfig": {
+      "title": "Treasure Hunt Configuration",
+      "description": "Admin controlled clues and codes",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "penaltyTime": { "type": "number", "description": "Penalty lockout duration in seconds" },
+        "clues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "clue": { "type": "string" },
+              "code": { "type": "string" }
+            }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "TreasureHuntProgress": {
+      "title": "Treasure Hunt Progress",
+      "description": "User's current state in the treasure hunt",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "teamName": { "type": "string" },
+        "clueSequence": { "type": "array", "items": { "type": "number" } },
+        "currentClueIndex": { "type": "number" },
+        "lockedUntil": { "type": "string", "format": "date-time" },
+        "isCompleted": { "type": "boolean" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "currentClueIndex"]
+    },
+    "SystemBroadcast": {
+      "title": "System Broadcast",
+      "description": "Live broadcast message from administrators",
+      "type": "object",
+      "properties": {
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["message", "type", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/announcements": { "schema": "SystemBroadcast", "description": "Global broadcasts" },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Registration records for events"
+    },
+    "/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Community chat messages"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "SystemBroadcast",
+      "description": "Official fest announcements"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "QuizConfig",
+      "description": "Library of quizzes"
+    },
+    "/quiz_responses/{responseId}": {
+      "schema": "QuizResponse",
+      "description": "Participant quiz submissions"
+    },
+    "/treasure_hunts/{huntId}": {
+      "schema": "TreasureHuntConfig",
+      "description": "Library of treasure hunts"
+    },
+    "/treasure_hunt_progress/{userId}": {
+      "schema": "TreasureHuntProgress",
+      "description": "Individual user progress"
+    }
+  }
+}

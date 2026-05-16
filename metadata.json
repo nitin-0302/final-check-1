@@ -1,0 +1,12 @@
+{
+  "name": "Rasayan 2026 - Panchtatva Fest Registration",
+  "description": "A modern, multi-event registration platform for Rasayan 2026, featuring the Panchtatva theme, user dashboards, and live interactive games including a quiz and treasure hunt.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
